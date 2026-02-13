@@ -8,3 +8,4 @@ two 1:16 deviders (6.8KOm and 102KOm) to ADC's
 
 Arduino IDE 1.8.19
 
+Drawing done using app.smartdraw.com

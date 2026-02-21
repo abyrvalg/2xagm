@@ -4,7 +4,7 @@
 
 // Select in IDE  Tools->Board 'NodeMCU-32S' 
 // or 'Nologo ESP32C3 Super Mini' target 
-// #define ESP32_C3_SUPERMINI_TARGET
+//#define ESP32_C3_SUPERMINI_TARGET
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 32 // OLED display height, in pixels
@@ -14,22 +14,25 @@
 #define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
+const int lowV = 10500;
+
 #ifdef ESP32_C3_SUPERMINI_TARGET
+int rUp = 1000;
+int rDown = 68;
 const int portPinAB = 1;  //  for A+B: 1 at ESP32-C3
 const int portPinB = 3;   //  for B:   3 at ESP32-C3 
 const int coefAB = 132;   //  to adjust ADC channel AB
 const int coefB = 138;    //  to adjust ADC channel B
 #else
-const int coefAB = 107;  //  to adjust ADC channel AB
-const int coefB = 103;   //  to adjust ADC channel B
+const int rUp = 150;
+const int rDown = 10;
 const int portPinAB = 34;  //  for A+B: 34 at ESP32
-const int portPinB = 35;  //  for B :  35 at ESP32
+const int portPinB  = 35;  //  for B :  35 at ESP32
+const int coefAB    = 112; //  to adjust ADC channel AB more 18V
+const int coefABLow = 102; //  to adjust ADC channel AB less 18V
+const int coefB     = 114; //  to adjust ADC channel B  more 18V
+const int coefBLow  = 102; //  to adjust ADC channel AB less 18V
 #endif
-
-const int lowV = 10500;
-const int rUp = 1000;
-const int rDown = 68;
-const int rSum = rUp + rDown;
 
 bool oledOk = false;
 bool zerosV = false;
@@ -78,10 +81,28 @@ void loop() {
     analogValueB = 0;
   if (analogValueAB < 80 && analogValueAB > 0)
     analogValueAB = 0;
+    
+Serial.printf(" B+A  : %d\n", analogValueAB);
+Serial.printf(" B  : %d\n", analogValueB);
+
+int koefAB = coefAB;
+int koefB  = coefB;
+int rU = rUp;
+int rD = rDown;
+int rSum = rU + rD;
+
+#ifdef ESP32_C3_SUPERMINI_TARGET
+
+#else
+  if (analogValueAB < 1250)
+    koefAB = coefABLow;  
+  if (analogValueB < 1250)
+    koefB = coefBLow;  
+#endif
 
   // print out the values you read:
-  int sumVolt = analogValueAB * rSum / rDown * 100 / coefAB;
-  int bVolt = analogValueB * rSum / rDown * 100 / coefB;
+  int sumVolt = analogValueAB * rSum / rD * 100 / koefAB;
+  int bVolt = analogValueB * rSum / rD * 100 / koefB;
   int aVolt = sumVolt -  bVolt;
 
   Serial.printf("ADC B+A  mV: %d\n", sumVolt);

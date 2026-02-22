@@ -4,7 +4,7 @@
 
 // Select in IDE  Tools->Board 'NodeMCU-32S' 
 // or 'Nologo ESP32C3 Super Mini' target 
-//#define ESP32_C3_SUPERMINI_TARGET
+#define ESP32_C3_SUPERMINI_TARGET
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 32 // OLED display height, in pixels
@@ -15,17 +15,17 @@
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 const int lowV = 10500;
-
-#ifdef ESP32_C3_SUPERMINI_TARGET
-int rUp = 1000;
-int rDown = 68;
-const int portPinAB = 1;  //  for A+B: 1 at ESP32-C3
-const int portPinB = 3;   //  for B:   3 at ESP32-C3 
-const int coefAB = 132;   //  to adjust ADC channel AB
-const int coefB = 138;    //  to adjust ADC channel B
-#else
 const int rUp = 150;
 const int rDown = 10;
+
+#ifdef ESP32_C3_SUPERMINI_TARGET
+const int portPinAB = 1;  //  for A+B: 1 at ESP32-C3
+const int portPinB = 3;   //  for B:   3 at ESP32-C3 
+const int coefAB    = 134; //  to adjust ADC channel AB more 18V
+const int coefABLow = 131; //  to adjust ADC channel AB less 18V
+const int coefB     = 133; //  to adjust ADC channel B  more 18V
+const int coefBLow  = 131; //  to adjust ADC channel AB less 18V
+#else
 const int portPinAB = 34;  //  for A+B: 34 at ESP32
 const int portPinB  = 35;  //  for B :  35 at ESP32
 const int coefAB    = 112; //  to adjust ADC channel AB more 18V
@@ -82,8 +82,8 @@ void loop() {
   if (analogValueAB < 80 && analogValueAB > 0)
     analogValueAB = 0;
     
-Serial.printf(" B+A  : %d\n", analogValueAB);
-Serial.printf(" B  : %d\n", analogValueB);
+  //Serial.printf(" B+A  : %d\n", analogValueAB);
+  //Serial.printf(" B  : %d\n", analogValueB);
 
 int koefAB = coefAB;
 int koefB  = coefB;
@@ -92,7 +92,10 @@ int rD = rDown;
 int rSum = rU + rD;
 
 #ifdef ESP32_C3_SUPERMINI_TARGET
-
+  if (analogValueAB < 1475)
+    koefAB = coefABLow;  
+  if (analogValueB < 1475)
+    koefB = coefBLow;  
 #else
   if (analogValueAB < 1250)
     koefAB = coefABLow;  
